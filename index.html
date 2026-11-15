@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Coleta Bairro — Protótipo navegável</title>
+<style>
+  :root {
+    --azul: #0B3D5C; --verde: #1F8A70; --verde-claro: #E6F4EF; --creme: #F4F1EA;
+    --cinza: #5C6B73; --borda: #DCE3E6; --vermelho: #B3412E; --amarelo: #F2B33D;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, Arial, sans-serif; background: #e9ecee; color: #1C1C1C; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .aparelho { width: 390px; height: 844px; background: #fff; border-radius: 42px; border: 10px solid #101820; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+  .tela { display: none; position: absolute; inset: 0; overflow-y: auto; padding: 64px 22px 110px; background: #fff; }
+  .tela.ativa { display: block; }
+  .tela.sem-barra { padding-bottom: 36px; }
+  .icone { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .voltar { border: 0; background: var(--creme); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--azul); }
+  .ajuda { border: 1px solid var(--borda); background: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--azul); }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--verde); margin: 4px 0 4px; }
+  h1 { font-size: 26px; color: var(--azul); margin: 0 0 8px; line-height: 1.2; }
+  h2 { font-size: 18px; color: var(--azul); margin: 22px 0 10px; }
+  p { color: var(--cinza); font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--azul); margin: 14px 0 6px; }
+  input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], select {
+    width: 100%; padding: 13px 14px; border: 1.5px solid var(--borda); border-radius: 12px; font-size: 15px; font-family: inherit; background: #fff;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--verde); }
+  .btn { width: 100%; border: 0; border-radius: 14px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 18px; font-family: inherit; }
+  .btn-principal { background: var(--verde); color: #fff; }
+  .btn-secundario { background: #fff; color: var(--azul); border: 1.5px solid var(--azul); }
+  .btn-escuro { background: var(--azul); color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .link-btn { display: block; text-align: center; margin-top: 14px; color: var(--azul); font-weight: 600; font-size: 14px; cursor: pointer; background: none; border: 0; width: 100%; font-family: inherit; }
+  .hero { background: var(--azul); color: #fff; border-radius: 22px; padding: 26px 22px; margin-top: 8px; }
+  .hero .kicker { color: #9fe0c9; }
+  .hero h1 { color: #fff; font-size: 30px; }
+  .hero p { color: #d6e4ec; }
+  .cartao { border: 1.5px solid var(--borda); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; background: #fff; }
+  .cartao.destaque { background: var(--verde-claro); border-color: var(--verde); }
+  .cartao h3 { margin: 0 0 4px; font-size: 15px; color: var(--azul); }
+  .cartao p { margin: 0; font-size: 13px; }
+  .grade { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .estatistica { background: var(--creme); border-radius: 16px; padding: 14px; }
+  .estatistica b { display: block; font-size: 22px; color: var(--azul); }
+  .estatistica span { font-size: 12px; color: var(--cinza); }
+  .escolha { display: flex; align-items: center; justify-content: space-between; border: 1.5px solid var(--borda); border-radius: 14px; padding: 12px 14px; margin-bottom: 9px; cursor: pointer; }
+  .escolha input { width: 20px; height: 20px; accent-color: var(--verde); }
+  .escolha.marcada { border-color: var(--verde); background: var(--verde-claro); }
+  .escolha .nome { font-weight: 600; color: var(--azul); font-size: 15px; display: flex; gap: 10px; align-items: center; }
+  .escolha .ajudinha { border: 0; background: var(--creme); width: 30px; height: 30px; border-radius: 50%; color: var(--azul); cursor: pointer; font-weight: 700; }
+  .linha-passos { list-style: none; padding: 0; margin: 14px 0; }
+  .linha-passos li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-left: 2px solid var(--borda); margin-left: 11px; padding-left: 18px; position: relative; }
+  .linha-passos li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--borda); position: absolute; left: -7px; top: 14px; }
+  .linha-passos li.feito::before { background: var(--verde); }
+  .linha-passos li.atual::before { background: var(--amarelo); }
+  .linha-passos li.feito, .linha-passos li.atual { color: var(--azul); }
+  .linha-passos li span { font-size: 14px; color: var(--cinza); }
+  .linha-passos li.feito span, .linha-passos li.atual span { color: var(--azul); font-weight: 600; }
+  .vazio { text-align: center; padding: 28px 12px; background: var(--creme); border-radius: 16px; color: var(--cinza); font-size: 14px; }
+  .aviso { background: #FFF6E0; border-radius: 12px; padding: 12px 14px; font-size: 13px; color: #6b4e00; margin-top: 12px; }
+  .codigo { font-family: Consolas, monospace; font-size: 18px; color: var(--azul); background: var(--creme); padding: 10px; border-radius: 10px; text-align: center; letter-spacing: .06em; }
+  .erro { color: var(--vermelho); font-size: 13px; margin-top: 8px; display: none; }
+  .erro.visivel { display: block; }
+  .marca-topo { font-weight: 800; color: var(--azul); font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .marca-topo .icone { color: var(--verde); }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 76px; background: #fff; border-top: 1px solid var(--borda); display: none; justify-content: space-around; align-items: center; padding-bottom: 8px; }
+  .com-abas .tabbar { display: flex; }
+  .tabbar a { text-decoration: none; color: #8a9aa2; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border-radius: 12px; }
+  .tabbar a.ativo { color: var(--verde); font-weight: 700; }
+
+  .painel-ajuda { position: absolute; inset: 0; background: rgba(16,24,32,.55); display: none; align-items: flex-end; z-index: 20; }
+  .painel-ajuda.aberto { display: flex; }
+  .folha { background: #fff; width: 100%; border-radius: 26px 26px 0 0; padding: 22px 22px 34px; max-height: 70%; overflow-y: auto; }
+  .folha h3 { margin: 0 0 8px; color: var(--azul); font-size: 18px; }
+  .folha p { font-size: 14px; }
+  .folha .fechar { margin-top: 10px; }
+  .toque { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--azul); color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 13px; display: none; z-index: 30; white-space: nowrap; }
+  .toque.visivel { display: block; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-recicla" viewBox="0 0 24 24"><path d="M7 19l-3-5.2 2.2-3.8M4 13.8L7 8.6M9 5.5l3-1.7 2.2 3.8M14 4l2.7 4.7M11.5 13l2.5 4.4H19" /></symbol>
+  <symbol id="i-casa" viewBox="0 0 24 24"><path d="M3.5 11L12 4l8.5 7M6 9.8V20h12V9.8"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-predio" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="1.5"/><path d="M9 8h1.5M13.5 8H15M9 12h1.5M13.5 12H15M10.5 20.5v-3h3v3"/></symbol>
+  <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-folha" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14"/><path d="M5 19l6-6"/></symbol>
+  <symbol id="i-caminhao" viewBox="0 0 24 24"><path d="M2.5 6h11v10h-11zM13.5 9.5h4l3 3V16h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+  <symbol id="i-usuario" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20c1.2-3.6 4-5.2 7.5-5.2s6.3 1.6 7.5 5.2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
+  <symbol id="i-ajuda" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.6"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-seta-esq" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-pessoa-check" viewBox="0 0 24 24"><circle cx="10" cy="8.5" r="3.8"/><path d="M3.5 20c1-3.3 3.4-4.8 6.5-4.8 1.7 0 3.1.4 4.2 1.2"/><path d="M15.5 16.5l2 2 3.5-4"/></symbol>
+  <symbol id="i-saco" viewBox="0 0 24 24"><path d="M7 8h10l1.5 11.5h-13z"/><path d="M9.5 8c0-2.4 1.1-4 2.5-4s2.5 1.6 2.5 4"/></symbol>
+  <symbol id="i-lixeira" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/></symbol>
+  <symbol id="i-grafico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6.5-5.7 6.5-11a6.5 6.5 0 1 0-13 0c0 5.3 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+</svg>
+
+<div class="aparelho" id="app">
+
+  <!-- 1. ONBOARDING -->
+  <section class="tela sem-barra" id="onboarding" data-titulo="Início">
+    <div class="topo">
+      <div class="marca-topo"><svg class="icone"><use href="#i-recicla"/></svg>Coleta Bairro</div>
+      <button class="ajuda" data-ajuda="onboarding" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="hero" style="margin-top:28px">
+      <div class="kicker">Reciclagem que chega até você</div>
+      <h1>Separou? A gente busca.</h1>
+      <p>Agende a coleta de recicláveis no seu bairro. A cooperativa leva o material e a renda fica com quem trabalha com reciclagem.</p>
+    </div>
+    <div style="margin-top:22px">
+      <div class="cartao"><h3>1. Você separa</h3><p>Papel, plástico, vidro, metal e latinhas, limpos e secos.</p></div>
+      <div class="cartao"><h3>2. Você agenda</h3><p>Escolha o material, o dia e o período.</p></div>
+      <div class="cartao"><h3>3. A cooperativa busca</h3><p>Um catador da cooperativa do bairro passa na sua casa ou condomínio.</p></div>
+    </div>
+    <button class="btn btn-principal" onclick="mostrar('cadastro')">Criar conta</button>
+    <button class="btn btn-secundario" onclick="mostrar('login')">Já tenho conta</button>
+    <button class="link-btn" onclick="mostrar('cooperativa')">Sou cooperativa ou catador</button>
+  </section>
+
+  <!-- 2. CADASTRO -->
+  <section class="tela sem-barra" id="cadastro" data-titulo="Criar conta">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="cadastro" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Passo 1 de 2</div>
+    <h1>Criar conta</h1>
+    <p>Preencha tudo. Os dados ficam salvos só neste navegador.</p>
+    <form id="form-cadastro" novalidate>
+      <label for="c-nome">Nome completo</label>
+      <input type="text" id="c-nome" autocomplete="off" />
+      <label for="c-email">E-mail</label>
+      <input type="email" id="c-email" autocomplete="off" />
+      <label for="c-senha">Senha (mínimo 6 caracteres)</label>
+      <input type="password" id="c-senha" autocomplete="new-password" />
+      <label for="c-endereco">Endereço (rua e número)</label>
+      <input type="text" id="c-endereco" autocomplete="off" />
+      <label>Onde você mora?</label>
+      <label class="escolha" style="margin:0 0 9px"><span class="nome"><svg class="icone"><use href="#i-casa"/></svg>Casa</span><input type="radio" name="c-moradia" value="casa" /></label>
+      <label class="escolha" style="margin:0 0 9px"><span class="nome"><svg class="icone"><use href="#i-predio"/></svg>Condomínio</span><input type="radio" name="c-moradia" value="condominio" /></label>
+      <div class="erro" id="c-erro">Preencha todos os campos e escolha onde você mora.</div>
+      <button class="btn btn-principal" type="submit">Criar conta</button>
+    </form>
+  </section>
+
+  <!-- 3. CONTA CRIADA -->
+  <section class="tela sem-barra" id="conta-criada" data-titulo="Conta criada">
+    <div style="text-align:center; margin-top:90px">
+      <div style="width:84px;height:84px;border-radius:50%;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 22px">
+        <svg class="icone" style="width:40px;height:40px;stroke-width:2.4"><use href="#i-check"/></svg>
+      </div>
+      <h1>Conta criada</h1>
+      <p>Agora entre com o e-mail e a senha que você cadastrou.</p>
+    </div>
+    <button class="btn btn-principal" onclick="mostrar('login')">Entrar na conta</button>
+  </section>
+
+  <!-- 4. LOGIN -->
+  <section class="tela sem-barra" id="login" data-titulo="Entrar">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="login" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Entrar</div>
+    <h1>Bem-vinda de volta</h1>
+    <p>Use o mesmo e-mail e senha do cadastro.</p>
+    <form id="form-login" novalidate>
+      <label for="l-email">E-mail</label>
+      <input type="email" id="l-email" autocomplete="off" />
+      <label for="l-senha">Senha</label>
+      <input type="password" id="l-senha" autocomplete="off" />
+      <div class="erro" id="l-erro">E-mail ou senha não conferem. Confira o cadastro.</div>
+      <button class="btn btn-principal" type="submit">Entrar</button>
+    </form>
+    <button class="link-btn" onclick="mostrar('cadastro')">Ainda não tenho conta</button>
+  </section>
+
+  <!-- 5. HOME -->
+  <section class="tela" id="home" data-titulo="Início">
+    <div class="topo">
+      <div class="marca-topo"><svg class="icone"><use href="#i-recicla"/></svg>Coleta Bairro</div>
+      <button class="ajuda" data-ajuda="home" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker" id="h-saudacao">Olá</div>
+    <h1 id="h-titulo">Sua reciclagem</h1>
+    <div class="cartao destaque" id="h-proxima">
+      <h3>Próxima coleta</h3>
+      <p id="h-proxima-texto">Nenhuma coleta agendada.</p>
+      <button class="btn btn-escuro" style="margin-top:12px" onclick="mostrar('materiais')">Agendar coleta</button>
+    </div>
+    <h2>Seus números</h2>
+    <div class="grade">
+      <div class="estatistica"><b id="h-kg">0 kg</b><span>reciclados por você</span></div>
+      <div class="estatistica"><b id="h-coletas">0</b><span>coletas concluídas</span></div>
+    </div>
+    <h2>Cooperativas do seu bairro</h2>
+    <div class="cartao"><h3>Cooperativa Ponte Verde</h3><p>Papel, plástico, vidro e latinhas. Busca às terças e quintas.</p></div>
+    <div class="cartao"><h3>Associação Recicla Norte</h3><p>Papel, metal e eletrônicos. Busca aos sábados.</p></div>
+    <div class="aviso">As cooperativas e os dias de coleta são exemplos para a demonstração.</div>
+  </section>
+
+  <!-- 6. MATERIAIS -->
+  <section class="tela" id="materiais" data-titulo="Materiais">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="materiais" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Passo 1 de 3</div>
+    <h1>O que você vai separar?</h1>
+    <p>Marque um ou mais materiais. Toque no ponto de interrogação para ver como separar cada um.</p>
+    <div id="lista-materiais"></div>
+    <h2>Quantos sacos você tem?</h2>
+    <select id="m-sacos">
+      <option value="">Escolha uma quantidade</option>
+      <option value="1-2">1 a 2 sacos</option>
+      <option value="3-5">3 a 5 sacos</option>
+      <option value="6+">6 sacos ou mais</option>
+    </select>
+    <div class="erro" id="m-erro">Escolha ao menos um material e a quantidade de sacos.</div>
+    <button class="btn btn-principal" onclick="continuarMateriais()">Continuar</button>
+  </section>
+
+  <!-- 7. AGENDAR -->
+  <section class="tela" id="agendar" data-titulo="Agendar">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="agendar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Passo 2 de 3</div>
+    <h1>Quando buscamos?</h1>
+    <label for="a-data">Dia da coleta</label>
+    <input type="date" id="a-data" />
+    <label>Período</label>
+    <label class="escolha"><span class="nome">Manhã (8h às 12h)</span><input type="radio" name="a-periodo" value="manha" /></label>
+    <label class="escolha"><span class="nome">Tarde (13h às 17h)</span><input type="radio" name="a-periodo" value="tarde" /></label>
+    <label for="a-endereco">Endereço da coleta</label>
+    <input type="text" id="a-endereco" placeholder="Rua e número" />
+    <label for="a-obs">Observação para o catador (opcional)</label>
+    <input type="text" id="a-obs" placeholder="Ex.: portão azul, interfone 12" />
+    <div class="erro" id="a-erro">Escolha o dia, o período e o endereço.</div>
+    <button class="btn btn-principal" onclick="continuarAgendar()">Revisar coleta</button>
+  </section>
+
+  <!-- 8. CONFIRMAÇÃO -->
+  <section class="tela" id="revisar" data-titulo="Revisar">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="revisar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Passo 3 de 3</div>
+    <h1>Confirme a coleta</h1>
+    <div class="cartao">
+      <h3>Materiais</h3><p id="r-materiais"></p>
+      <h3 style="margin-top:10px">Quantidade</h3><p id="r-sacos"></p>
+      <h3 style="margin-top:10px">Dia e período</h3><p id="r-dia"></p>
+      <h3 style="margin-top:10px">Endereço</h3><p id="r-endereco"></p>
+    </div>
+    <div class="aviso">A coleta é grátis para você. Ao confirmar, a cooperativa do bairro recebe o pedido e fica com a venda do material. Condomínios pagam um plano próprio.</div>
+    <button class="btn btn-principal" onclick="confirmarColeta()">Confirmar coleta</button>
+  </section>
+
+  <!-- 9. COLETA CONFIRMADA -->
+  <section class="tela sem-barra" id="confirmada" data-titulo="Coleta agendada">
+    <div style="text-align:center; margin-top:60px">
+      <div style="width:84px;height:84px;border-radius:50%;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 22px">
+        <svg class="icone" style="width:40px;height:40px;stroke-width:2.4"><use href="#i-check"/></svg>
+      </div>
+      <h1>Coleta agendada</h1>
+      <p>Guarde o código. A cooperativa usa ele para encontrar o seu pedido.</p>
+    </div>
+    <div class="codigo" id="cf-codigo">CB-0000</div>
+    <button class="btn btn-principal" onclick="mostrar('acompanhar')">Acompanhar coleta</button>
+    <button class="btn btn-secundario" onclick="mostrar('home')">Voltar ao início</button>
+  </section>
+
+  <!-- 10. ACOMPANHAR -->
+  <section class="tela" id="acompanhar" data-titulo="Acompanhar">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="acompanhar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker" id="ac-codigo">Coleta CB-0000</div>
+    <h1>Onde está sua coleta?</h1>
+    <ol class="linha-passos" id="ac-passos"></ol>
+    <div class="cartao" id="ac-resultado" style="display:none">
+      <h3>Pesagem registrada</h3>
+      <p id="ac-kg"></p>
+    </div>
+    <button class="btn btn-secundario" id="ac-simular" onclick="avancarEtapa()">Avançar etapa (simulação)</button>
+    <div class="aviso">Na vida real, a cooperativa atualiza cada etapa pelo painel dela. Aqui você pode avançar para ver o fluxo.</div>
+  </section>
+
+  <!-- 11. COOPERATIVA -->
+  <section class="tela" id="cooperativa" data-titulo="Cooperativa">
+    <div class="topo">
+      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="ajuda" data-ajuda="cooperativa" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="kicker">Painel da cooperativa</div>
+    <h1>Coletas de hoje</h1>
+    <p>Aqui a cooperativa marca as coletas feitas e registra o peso.</p>
+    <div id="co-lista"></div>
+    <div class="aviso">Painel de demonstração. Na versão real, cada cooperativa entra com a própria conta.</div>
+  </section>
+
+  <!-- 12. PLANO CONDOMÍNIO -->
+  <section class="tela" id="plano" data-titulo="Plano">
+    <div class="topo">
+      <div class="marca-topo">Plano para condomínio</div>
+      <button class="ajuda" data-ajuda="plano" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="hero">
+      <div class="kicker">Para síndicos e administradoras</div>
+      <h1 style="font-size:24px">Coleta semanal para o prédio</h1>
+      <p>A cooperativa passa toda semana. O síndico recebe um relatório mensal com o peso reciclado.</p>
+    </div>
+    <h2>O que está incluído</h2>
+    <div class="cartao"><h3>Coleta semanal programada</h3><p>Dia fixo, sem o morador precisar agendar.</p></div>
+    <div class="cartao"><h3>Relatório mensal para o síndico</h3><p>Quilos recolhidos e certificado de destinação.</p></div>
+    <div class="cartao"><h3>Painel para moradores</h3><p>Cada morador vê o que o prédio reciclou no mês.</p></div>
+    <h2>Preço de demonstração</h2>
+    <p>Hipótese para validar com síndicos: R$ 3,50 por unidade por mês, com mínimo de 20 unidades.</p>
+    <button class="btn btn-principal" onclick="assinarPlano()">Simular assinatura</button>
+  </section>
+
+  <!-- 13. PERFIL -->
+  <section class="tela" id="perfil" data-titulo="Perfil">
+    <div class="topo">
+      <div class="marca-topo">Seu perfil</div>
+      <button class="ajuda" data-ajuda="perfil" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
+    </div>
+    <div class="cartao"><h3 id="p-nome">Nome</h3><p id="p-email">E-mail</p><p id="p-endereco">Endereço</p><p id="p-moradia">Moradia</p></div>
+    <button class="btn btn-secundario" onclick="sair()">Sair da conta</button>
+  </section>
+
+  <nav class="tabbar" id="tabbar">
+    <a href="#home" data-tab="home"><svg class="icone"><use href="#i-recicla"/></svg>Início</a>
+    <a href="#materiais" data-tab="materiais"><svg class="icone"><use href="#i-calendario"/></svg>Coletar</a>
+    <a href="#acompanhar" data-tab="acompanhar"><svg class="icone"><use href="#i-caminhao"/></svg>Status</a>
+    <a href="#plano" data-tab="plano"><svg class="icone"><use href="#i-predio"/></svg>Plano</a>
+    <a href="#perfil" data-tab="perfil"><svg class="icone"><use href="#i-usuario"/></svg>Perfil</a>
+  </nav>
+
+  <div class="painel-ajuda" id="painel-ajuda" onclick="if(event.target===this)fecharAjuda()">
+    <div class="folha">
+      <h3 id="ajuda-titulo">Ajuda</h3>
+      <p id="ajuda-texto"></p>
+      <button class="btn btn-escuro fechar" onclick="fecharAjuda()">Entendi</button>
+    </div>
+  </div>
+  <div class="toque" id="toque"></div>
+</div>
+
+<script>
+const CONTA = "cb-conta", SESSAO = "cb-sessao", COLETA = "cb-coleta", HISTORICO = "cb-historico", RASCUNHO = "cb-materiais";
+
+const MATERIAIS = [
+  { id: "papel", nome: "Papel e papelão", ajuda: "Jornais, caixas e folhas. Dobre as caixas e tire fita e grampos. Papel engordurado não entra." },
+  { id: "plastico", nome: "Plástico", ajuda: "Garrafas PET, embalagens e sacolas. Lave, seque e amasse. Tire o rótulo se puder." },
+  { id: "vidro", nome: "Vidro", ajuda: "Garrafas e potes. Lave e tire a tampa. Cuidado com vidro quebrado: embrulhe em jornal e avise o catador." },
+  { id: "metal", nome: "Metal", ajuda: "Latas de alumínio, tampinhas e panelas velhas. Amasse as latas para ocupar menos espaço." },
+  { id: "latinha", nome: "Latinhas", ajuda: "Latas de bebida. Sem resto de líquido. Sacos de latinhas são muito bem aceitos." },
+  { id: "eletronicos", nome: "Eletrônicos", ajuda: "Celulares, carregadores e pilhas. Não jogue no saco de reciclável comum. Avise a cooperativa para receber separado." }
+];
+
+const ETAPAS = ["Agendada", "Cooperativa confirmou", "A caminho", "Coletada", "Pesada e registrada"];
+
+const AJUDAS = {
+  onboarding: { t: "Início", x: "Coleta Bairro busca seus recicláveis em casa ou no condomínio. A cooperativa do bairro faz a coleta. Toque em Criar conta para começar." },
+  cadastro: { t: "Criar conta", x: "Preencha todos os campos. O endereço é onde a cooperativa vai buscar. Casa e condomínio têm planos diferentes." },
+  login: { t: "Entrar", x: "Use o mesmo e-mail e senha do cadastro. A senha protege a conta e os dados ficam só neste navegador." },
+  home: { t: "Início", x: "Aqui fica a próxima coleta e o total que você já reciclou. O botão Agendar coleta começa o pedido." },
+  materiais: { t: "Materiais", x: "Marque o que você tem separado. O ponto de interrogação em cada material mostra como separar. A quantidade de sacos ajuda a cooperativa a planejar o carro." },
+  agendar: { t: "Agendar", x: "Escolha o dia e o período em que você estará em casa. O endereço precisa ser onde o material está. A observação ajuda o catador a encontrar você." },
+  revisar: { t: "Revisar", x: "Confira os dados antes de confirmar. Depois da confirmação, a cooperativa recebe o pedido com o código." },
+  acompanhar: { t: "Acompanhar", x: "Cada etapa mostra onde está a sua coleta. A etapa atual fica em amarelo e as concluídas ficam em verde." },
+  cooperativa: { t: "Painel da cooperativa", x: "A cooperativa vê as coletas do dia, marca a coleta como feita e registra o peso. Esse peso aparece no seu total." },
+  plano: { t: "Plano condomínio", x: "O plano é pago pelo condomínio, não por cada morador. O síndico recebe relatórios e o prédio tem coleta fixa toda semana." },
+  perfil: { t: "Perfil", x: "Seus dados ficam salvos neste navegador. Sair da conta não apaga a sua coleta." }
+};
+
+const telasLivres = new Set(["onboarding", "cadastro", "conta-criada", "login", "cooperativa"]);
+const telasComAbas = new Set(["home", "materiais", "agendar", "acompanhar", "plano", "perfil"]);
+const telas = [...document.querySelectorAll(".tela")].map(t => t.id);
+
+const lerJSON = (chave, padrao) => { try { return JSON.parse(localStorage.getItem(chave) || sessionStorage.getItem(chave)) ?? padrao; } catch { return padrao; } };
+const contaSalva = () => lerJSON(CONTA, null);
+const sessao = () => sessionStorage.getItem(SESSAO);
+const coletaAtual = () => lerJSON(COLETA, null);
+
+function toque(msg) {
+  const el = document.getElementById("toque");
+  el.textContent = msg; el.classList.add("visivel");
+  clearTimeout(toque.t); toque.t = setTimeout(() => el.classList.remove("visivel"), 1800);
+}
+
+function mostrar(id) {
+  let alvo = telas.includes(id) ? id : "onboarding";
+  if (!telasLivres.has(alvo) && !sessao()) alvo = contaSalva() ? "login" : "onboarding";
+  if (alvo === "agendar" && !lerJSON(RASCUNHO, null)) alvo = "materiais";
+  if (alvo === "revisar" && !lerJSON("cb-agenda", null)) alvo = "agendar";
+  if (alvo === "confirmada" && !coletaAtual()) alvo = "home";
+  if (alvo === "acompanhar" && !coletaAtual()) alvo = "home";
+  if (location.hash.slice(1) !== alvo) history.replaceState(null, "", "#" + alvo);
+  telas.forEach(t => document.getElementById(t).classList.toggle("ativa", t === alvo));
+  const app = document.getElementById("app");
+  app.classList.toggle("com-abas", telasComAbas.has(alvo) && !!sessao());
+  document.querySelectorAll(".tabbar a").forEach(a => a.classList.toggle("ativo", a.dataset.tab === alvo));
+  preencher(alvo);
+  document.getElementById("app").scrollTop = 0;
+  document.querySelector(`#${alvo}`).scrollTop = 0;
+}
+
+function preencher(alvo) {
+  const conta = contaSalva();
+  if (alvo === "home" && conta) {
+    const primeiro = conta.nome.split(" ")[0];
+    document.getElementById("h-saudacao").textContent = "Olá, " + primeiro;
+    const historico = lerJSON(HISTORICO, []);
+    const kg = historico.reduce((s, c) => s + c.kg, 0);
+    document.getElementById("h-kg").textContent = kg.toLocaleString("pt-BR") + " kg";
+    document.getElementById("h-coletas").textContent = historico.length;
+    const c = coletaAtual();
+    document.getElementById("h-proxima-texto").textContent = c && c.etapa < 4
+      ? `Código ${c.codigo}. Etapa: ${ETAPAS[c.etapa]}.`
+      : "Nenhuma coleta agendada.";
+  }
+  if (alvo === "materiais") renderMateriais();
+  if (alvo === "revisar") renderRevisao();
+  if (alvo === "confirmada") document.getElementById("cf-codigo").textContent = coletaAtual().codigo;
+  if (alvo === "acompanhar") renderAcompanhar();
+  if (alvo === "cooperativa") renderCooperativa();
+  if (alvo === "perfil" && conta) {
+    document.getElementById("p-nome").textContent = conta.nome;
+    document.getElementById("p-email").textContent = conta.email;
+    document.getElementById("p-endereco").textContent = conta.endereco;
+    document.getElementById("p-moradia").textContent = conta.moradia === "condominio" ? "Condomínio" : "Casa";
+  }
+}
+
+// CADASTRO
+document.getElementById("form-cadastro").addEventListener("submit", e => {
+  e.preventDefault();
+  const nome = document.getElementById("c-nome").value.trim();
+  const email = document.getElementById("c-email").value.trim();
+  const senha = document.getElementById("c-senha").value;
+  const endereco = document.getElementById("c-endereco").value.trim();
+  const moradia = document.querySelector("input[name=c-moradia]:checked")?.value;
+  const ok = nome && /\S+@\S+\.\S+/.test(email) && senha.length >= 6 && endereco && moradia;
+  document.getElementById("c-erro").classList.toggle("visivel", !ok);
+  if (!ok) return;
+  localStorage.setItem(CONTA, JSON.stringify({ nome, email, senha, endereco, moradia }));
+  e.target.reset();
+  mostrar("conta-criada");
+});
+
+// LOGIN
+document.getElementById("form-login").addEventListener("submit", e => {
+  e.preventDefault();
+  const conta = contaSalva();
+  const email = document.getElementById("l-email").value.trim();
+  const senha = document.getElementById("l-senha").value;
+  const ok = conta && conta.email === email && conta.senha === senha;
+  document.getElementById("l-erro").classList.toggle("visivel", !ok);
+  if (!ok) return;
+  sessionStorage.setItem(SESSAO, email);
+  e.target.reset();
+  mostrar("home");
+});
+
+function sair() {
+  sessionStorage.removeItem(SESSAO);
+  mostrar("onboarding");
+}
+
+// MATERIAIS
+function renderMateriais() {
+  const marcados = lerJSON(RASCUNHO, null)?.materiais || [];
+  const lista = document.getElementById("lista-materiais");
+  lista.innerHTML = MATERIAIS.map(m => `
+    <label class="escolha ${marcados.includes(m.id) ? "marcada" : ""}">
+      <span class="nome">${m.nome}
+        <button class="ajudinha" type="button" data-material-ajuda="${m.id}" aria-label="Como separar ${m.nome}">?</button>
+      </span>
+      <input type="checkbox" value="${m.id}" ${marcados.includes(m.id) ? "checked" : ""} />
+    </label>`).join("");
+  lista.querySelectorAll("input").forEach(i => i.addEventListener("change", () => {
+    i.closest("label").classList.toggle("marcada", i.checked);
+  }));
+  lista.querySelectorAll("[data-material-ajuda]").forEach(b => b.addEventListener("click", e => {
+    e.preventDefault(); e.stopPropagation();
+    const m = MATERIAIS.find(x => x.id === b.dataset.materialAjuda);
+    abrirAjuda(m.nome, m.ajuda);
+  }));
+  document.getElementById("m-sacos").value = lerJSON(RASCUNHO, null)?.sacos || "";
+}
+
+function continuarMateriais() {
+  const materiais = [...document.querySelectorAll("#lista-materiais input:checked")].map(i => i.value);
+  const sacos = document.getElementById("m-sacos").value;
+  const ok = materiais.length > 0 && sacos;
+  document.getElementById("m-erro").classList.toggle("visivel", !ok);
+  if (!ok) return;
+  sessionStorage.setItem(RASCUNHO, JSON.stringify({ materiais, sacos }));
+  mostrar("agendar");
+}
+
+// AGENDAR
+function continuarAgendar() {
+  const data = document.getElementById("a-data").value;
+  const periodo = document.querySelector("input[name=a-periodo]:checked")?.value;
+  const endereco = document.getElementById("a-endereco").value.trim();
+  const ok = data && periodo && endereco;
+  document.getElementById("a-erro").classList.toggle("visivel", !ok);
+  if (!ok) return;
+  sessionStorage.setItem("cb-agenda", JSON.stringify({ data, periodo, endereco, obs: document.getElementById("a-obs").value.trim() }));
+  mostrar("revisar");
+}
+
+function nomesMateriais(ids) {
+  return ids.map(id => MATERIAIS.find(m => m.id === id).nome).join(", ");
+}
+
+function renderRevisao() {
+  const rascunho = lerJSON(RASCUNHO, { materiais: [], sacos: "" });
+  const agenda = lerJSON("cb-agenda", {});
+  const periodo = agenda.periodo === "manha" ? "manhã" : "tarde";
+  const dia = agenda.data ? new Date(agenda.data + "T12:00:00").toLocaleDateString("pt-BR") : "";
+  document.getElementById("r-materiais").textContent = nomesMateriais(rascunho.materiais);
+  document.getElementById("r-sacos").textContent = rascunho.sacos.replace("-", " a ") + " sacos";
+  document.getElementById("r-dia").textContent = `${dia}, ${periodo}`;
+  document.getElementById("r-endereco").textContent = agenda.endereco + (agenda.obs ? ` (${agenda.obs})` : "");
+}
+
+function confirmarColeta() {
+  const rascunho = lerJSON(RASCUNHO, null);
+  const agenda = lerJSON("cb-agenda", null);
+  if (!rascunho || !agenda) return mostrar("materiais");
+  const codigo = "CB-" + Math.floor(1000 + Math.random() * 9000);
+  const coleta = { codigo, materiais: rascunho.materiais, sacos: rascunho.sacos, ...agenda, etapa: 0, kg: 0 };
+  localStorage.setItem(COLETA, JSON.stringify(coleta));
+  sessionStorage.removeItem(RASCUNHO);
+  sessionStorage.removeItem("cb-agenda");
+  mostrar("confirmada");
+}
+
+// ACOMPANHAR
+function renderAcompanhar() {
+  const c = coletaAtual();
+  if (!c) return;
+  document.getElementById("ac-codigo").textContent = "Coleta " + c.codigo;
+  document.getElementById("ac-passos").innerHTML = ETAPAS.map((e, i) => {
+    const cls = i < c.etapa ? "feito" : i === c.etapa ? "atual" : "";
+    return `<li class="${cls}"><span>${e}</span></li>`;
+  }).join("");
+  const pronta = c.etapa >= 4;
+  document.getElementById("ac-resultado").style.display = pronta ? "block" : "none";
+  if (pronta) document.getElementById("ac-kg").textContent = `${c.kg} kg de material registrado. Obrigado por separar.`;
+  document.getElementById("ac-simular").disabled = pronta;
+  document.getElementById("ac-simular").textContent = pronta ? "Coleta concluída" : "Avançar etapa (simulação)";
+}
+
+function avancarEtapa() {
+  const c = coletaAtual();
+  if (!c || c.etapa >= 4) return;
+  c.etapa += 1;
+  if (c.etapa === 4) {
+    if (!c.kg) c.kg = Math.round((parseInt(c.sacos, 10) || 2) * 4.5);
+    const historico = lerJSON(HISTORICO, []);
+    historico.push({ codigo: c.codigo, kg: c.kg });
+    localStorage.setItem(HISTORICO, JSON.stringify(historico));
+  }
+  localStorage.setItem(COLETA, JSON.stringify(c));
+  renderAcompanhar();
+}
+
+// COOPERATIVA
+function renderCooperativa() {
+  const c = coletaAtual();
+  const lista = document.getElementById("co-lista");
+  if (!c) {
+    lista.innerHTML = `<div class="vazio">Nenhuma coleta chegou para esta cooperativa ainda. Quando um morador confirmar um pedido, ele aparece aqui.</div>`;
+    return;
+  }
+  const feita = c.etapa >= 3;
+  lista.innerHTML = `
+    <div class="cartao ${feita ? "" : "destaque"}">
+      <h3>${c.codigo} · ${c.periodo === "manha" ? "Manhã" : "Tarde"}</h3>
+      <p>${c.endereco}${c.obs ? " · " + c.obs : ""}</p>
+      <p style="margin-top:6px">${nomesMateriais(c.materiais)} · ${c.sacos.replace("-", " a ")} sacos</p>
+      ${feita
+        ? `<p style="margin-top:8px;color:var(--verde);font-weight:700">Coletada: ${c.kg} kg registrados</p>`
+        : `<label for="co-kg">Peso recolhido (kg)</label>
+           <input type="number" id="co-kg" min="1" step="0.5" placeholder="Ex.: 12" />
+           <div class="erro" id="co-erro">Informe o peso em kg.</div>
+           <button class="btn btn-principal" style="margin-top:10px" onclick="registrarColeta()">Marcar como coletada</button>`}
+    </div>`;
+}
+
+function registrarColeta() {
+  const c = coletaAtual();
+  const kg = parseFloat(document.getElementById("co-kg").value);
+  document.getElementById("co-erro").classList.toggle("visivel", !(kg > 0));
+  if (!(kg > 0)) return;
+  c.kg = kg;
+  c.etapa = Math.max(c.etapa, 3);
+  localStorage.setItem(COLETA, JSON.stringify(c));
+  toque("Coleta marcada. O morador já vê o peso.");
+  renderCooperativa();
+}
+
+function assinarPlano() {
+  toque("Simulação: pagamento ainda não integrado.");
+}
+
+// AJUDA
+function abrirAjuda(titulo, texto) {
+  document.getElementById("ajuda-titulo").textContent = titulo;
+  document.getElementById("ajuda-texto").textContent = texto;
+  document.getElementById("painel-ajuda").classList.add("aberto");
+}
+function fecharAjuda() { document.getElementById("painel-ajuda").classList.remove("aberto"); }
+document.querySelectorAll("[data-ajuda]").forEach(b => b.addEventListener("click", () => {
+  const a = AJUDAS[b.dataset.ajuda];
+  abrirAjuda(a.t, a.x);
+}));
+
+window.addEventListener("hashchange", () => mostrar(location.hash.slice(1) || "onboarding"));
+mostrar(location.hash.slice(1) || "onboarding");
+</script>
+</body>
+</html>
