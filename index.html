@@ -62,6 +62,10 @@
   .vazio { text-align: center; padding: 28px 12px; background: var(--creme); border-radius: 16px; color: var(--cinza); font-size: 14px; }
   .aviso { background: #FFF6E0; border-radius: 12px; padding: 12px 14px; font-size: 13px; color: #6b4e00; margin-top: 12px; }
   .codigo { font-family: Consolas, monospace; font-size: 18px; color: var(--azul); background: var(--creme); padding: 10px; border-radius: 10px; text-align: center; letter-spacing: .06em; }
+  .campo-travado { background: var(--creme); color: var(--azul); border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.4; font-weight: 600; }
+  .nota-cep { font-size: 13px; color: var(--cinza); min-height: 1.2em; margin: 6px 0 0; }
+  .extra { display: none; margin-top: 8px; }
+  .extra.visivel { display: block; }
   .erro { color: var(--vermelho); font-size: 13px; margin-top: 8px; display: none; }
   .erro.visivel { display: block; }
   .marca-topo { font-weight: 800; color: var(--azul); font-size: 15px; display: flex; align-items: center; gap: 8px; }
@@ -128,7 +132,7 @@
   <!-- 2. CADASTRO -->
   <section class="tela sem-barra" id="cadastro" data-titulo="Criar conta">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="cadastro" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Passo 1 de 2</div>
@@ -141,8 +145,25 @@
       <input type="email" id="c-email" autocomplete="off" />
       <label for="c-senha">Senha (mínimo 6 caracteres)</label>
       <input type="password" id="c-senha" autocomplete="new-password" />
-      <label for="c-endereco">Endereço (rua e número)</label>
-      <input type="text" id="c-endereco" autocomplete="off" />
+      <label for="c-cep">CEP</label>
+      <input type="text" id="c-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" autocomplete="off" />
+      <p class="nota-cep" id="c-cep-status"></p>
+      <div class="cartao destaque" id="c-endereco-box" hidden>
+        <h3>Endereço encontrado</h3>
+        <p id="c-endereco-texto"></p>
+      </div>
+      <div id="c-extras" hidden>
+        <label class="escolha" style="margin-top:12px"><span class="nome">Meu endereço tem número</span><input type="checkbox" id="c-tem-numero" /></label>
+        <div class="extra" id="c-numero-wrap">
+          <label for="c-numero">Número</label>
+          <input type="text" id="c-numero" inputmode="numeric" autocomplete="off" />
+        </div>
+        <label class="escolha"><span class="nome">Meu endereço tem complemento</span><input type="checkbox" id="c-tem-complemento" /></label>
+        <div class="extra" id="c-complemento-wrap">
+          <label for="c-complemento">Complemento</label>
+          <input type="text" id="c-complemento" placeholder="Apto, bloco, casa" autocomplete="off" />
+        </div>
+      </div>
       <label>Onde você mora?</label>
       <label class="escolha" style="margin:0 0 9px"><span class="nome"><svg class="icone"><use href="#i-casa"/></svg>Casa</span><input type="radio" name="c-moradia" value="casa" /></label>
       <label class="escolha" style="margin:0 0 9px"><span class="nome"><svg class="icone"><use href="#i-predio"/></svg>Condomínio</span><input type="radio" name="c-moradia" value="condominio" /></label>
@@ -166,7 +187,7 @@
   <!-- 4. LOGIN -->
   <section class="tela sem-barra" id="login" data-titulo="Entrar">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="login" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Entrar</div>
@@ -210,7 +231,7 @@
   <!-- 6. MATERIAIS -->
   <section class="tela" id="materiais" data-titulo="Materiais">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="materiais" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Passo 1 de 3</div>
@@ -231,7 +252,7 @@
   <!-- 7. AGENDAR -->
   <section class="tela" id="agendar" data-titulo="Agendar">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="agendar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Passo 2 de 3</div>
@@ -241,8 +262,8 @@
     <label>Período</label>
     <label class="escolha"><span class="nome">Manhã (8h às 12h)</span><input type="radio" name="a-periodo" value="manha" /></label>
     <label class="escolha"><span class="nome">Tarde (13h às 17h)</span><input type="radio" name="a-periodo" value="tarde" /></label>
-    <label for="a-endereco">Endereço da coleta</label>
-    <input type="text" id="a-endereco" placeholder="Rua e número" />
+    <label>Endereço da coleta</label>
+    <div class="campo-travado" id="a-endereco">O endereço da sua conta aparece aqui.</div>
     <label for="a-obs">Observação para o catador (opcional)</label>
     <input type="text" id="a-obs" placeholder="Ex.: portão azul, interfone 12" />
     <div class="erro" id="a-erro">Escolha o dia, o período e o endereço.</div>
@@ -252,7 +273,7 @@
   <!-- 8. CONFIRMAÇÃO -->
   <section class="tela" id="revisar" data-titulo="Revisar">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="revisar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Passo 3 de 3</div>
@@ -284,7 +305,7 @@
   <!-- 10. ACOMPANHAR -->
   <section class="tela" id="acompanhar" data-titulo="Acompanhar">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="acompanhar" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker" id="ac-codigo">Coleta CB-0000</div>
@@ -301,7 +322,7 @@
   <!-- 11. COOPERATIVA -->
   <section class="tela" id="cooperativa" data-titulo="Cooperativa">
     <div class="topo">
-      <button class="voltar" onclick="history.back()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
+      <button class="voltar" onclick="voltar()" aria-label="Voltar"><svg class="icone"><use href="#i-seta-esq"/></svg></button>
       <button class="ajuda" data-ajuda="cooperativa" aria-label="Ajuda"><svg class="icone"><use href="#i-ajuda"/></svg></button>
     </div>
     <div class="kicker">Painel da cooperativa</div>
@@ -375,11 +396,11 @@ const ETAPAS = ["Agendada", "Cooperativa confirmou", "A caminho", "Coletada", "P
 
 const AJUDAS = {
   onboarding: { t: "Início", x: "Coleta Bairro busca seus recicláveis em casa ou no condomínio. A cooperativa do bairro faz a coleta. Toque em Criar conta para começar." },
-  cadastro: { t: "Criar conta", x: "Preencha todos os campos. O endereço é onde a cooperativa vai buscar. Casa e condomínio têm planos diferentes." },
+  cadastro: { t: "Criar conta", x: "Digite o CEP. A rua, o bairro e a cidade são preenchidos e não podem ser alterados. Marque se o endereço tem número e complemento. Casa e condomínio têm planos diferentes." },
   login: { t: "Entrar", x: "Use o mesmo e-mail e senha do cadastro. A senha protege a conta e os dados ficam só neste navegador." },
   home: { t: "Início", x: "Aqui fica a próxima coleta e o total que você já reciclou. O botão Agendar coleta começa o pedido." },
   materiais: { t: "Materiais", x: "Marque o que você tem separado. O ponto de interrogação em cada material mostra como separar. A quantidade de sacos ajuda a cooperativa a planejar o carro." },
-  agendar: { t: "Agendar", x: "Escolha o dia e o período em que você estará em casa. O endereço precisa ser onde o material está. A observação ajuda o catador a encontrar você." },
+  agendar: { t: "Agendar", x: "Escolha o dia e o período em que você estará em casa. O endereço é o do cadastro e não pode ser alterado aqui. A observação ajuda o catador a encontrar você." },
   revisar: { t: "Revisar", x: "Confira os dados antes de confirmar. Depois da confirmação, a cooperativa recebe o pedido com o código." },
   acompanhar: { t: "Acompanhar", x: "Cada etapa mostra onde está a sua coleta. A etapa atual fica em amarelo e as concluídas ficam em verde." },
   cooperativa: { t: "Painel da cooperativa", x: "A cooperativa vê as coletas do dia, marca a coleta como feita e registra o peso. Esse peso aparece no seu total." },
@@ -402,6 +423,18 @@ function toque(msg) {
   clearTimeout(toque.t); toque.t = setTimeout(() => el.classList.remove("visivel"), 1800);
 }
 
+const pilha = [];
+let voltando = false;
+
+function voltar() {
+  const atual = document.querySelector(".tela.ativa")?.id;
+  let anterior = pilha.pop();
+  while (anterior === atual) anterior = pilha.pop();
+  voltando = true;
+  mostrar(anterior || "onboarding");
+  voltando = false;
+}
+
 function mostrar(id) {
   let alvo = telas.includes(id) ? id : "onboarding";
   if (!telasLivres.has(alvo) && !sessao()) alvo = contaSalva() ? "login" : "onboarding";
@@ -409,6 +442,8 @@ function mostrar(id) {
   if (alvo === "revisar" && !lerJSON("cb-agenda", null)) alvo = "agendar";
   if (alvo === "confirmada" && !coletaAtual()) alvo = "home";
   if (alvo === "acompanhar" && !coletaAtual()) alvo = "home";
+  const atual = document.querySelector(".tela.ativa")?.id;
+  if (!voltando && atual && atual !== alvo) pilha.push(atual);
   if (location.hash.slice(1) !== alvo) history.replaceState(null, "", "#" + alvo);
   telas.forEach(t => document.getElementById(t).classList.toggle("ativa", t === alvo));
   const app = document.getElementById("app");
@@ -434,6 +469,7 @@ function preencher(alvo) {
       : "Nenhuma coleta agendada.";
   }
   if (alvo === "materiais") renderMateriais();
+  if (alvo === "agendar" && conta) document.getElementById("a-endereco").textContent = conta.endereco;
   if (alvo === "revisar") renderRevisao();
   if (alvo === "confirmada") document.getElementById("cf-codigo").textContent = coletaAtual().codigo;
   if (alvo === "acompanhar") renderAcompanhar();
@@ -447,18 +483,94 @@ function preencher(alvo) {
 }
 
 // CADASTRO
+let enderecoEncontrado = null;
+
+function ligarExtra(checkId, campoId) {
+  const check = document.getElementById(checkId);
+  check.addEventListener("change", () => {
+    document.getElementById(campoId).classList.toggle("visivel", check.checked);
+    check.closest("label").classList.toggle("marcada", check.checked);
+  });
+}
+ligarExtra("c-tem-numero", "c-numero-wrap");
+ligarExtra("c-tem-complemento", "c-complemento-wrap");
+
+document.getElementById("c-cep").addEventListener("input", async (e) => {
+  const digitos = e.target.value.replace(/\D/g, "").slice(0, 8);
+  e.target.value = digitos.length > 5 ? digitos.slice(0, 5) + "-" + digitos.slice(5) : digitos;
+  const status = document.getElementById("c-cep-status");
+  const box = document.getElementById("c-endereco-box");
+  const extras = document.getElementById("c-extras");
+  if (digitos.length < 8) {
+    enderecoEncontrado = null;
+    box.hidden = true;
+    extras.hidden = true;
+    status.textContent = "";
+    return;
+  }
+  status.textContent = "Buscando CEP...";
+  try {
+    const resposta = await fetch("https://viacep.com.br/ws/" + digitos + "/json/");
+    const dados = await resposta.json();
+    if (dados.erro || !dados.logradouro) {
+      enderecoEncontrado = null;
+      box.hidden = true;
+      extras.hidden = true;
+      status.textContent = dados.erro
+        ? "CEP não encontrado. Confira os números."
+        : "Esse CEP não traz o nome da rua. Use o CEP da sua rua.";
+      return;
+    }
+    enderecoEncontrado = dados;
+    document.getElementById("c-endereco-texto").textContent =
+      dados.logradouro + ", " + dados.bairro + ", " + dados.localidade + " - " + dados.uf;
+    box.hidden = false;
+    extras.hidden = false;
+    status.textContent = "Endereço encontrado. A rua não pode ser alterada.";
+  } catch {
+    enderecoEncontrado = null;
+    box.hidden = true;
+    extras.hidden = true;
+    status.textContent = "Não foi possível consultar o CEP. Verifique a internet.";
+  }
+});
+
 document.getElementById("form-cadastro").addEventListener("submit", e => {
   e.preventDefault();
   const nome = document.getElementById("c-nome").value.trim();
   const email = document.getElementById("c-email").value.trim();
   const senha = document.getElementById("c-senha").value;
-  const endereco = document.getElementById("c-endereco").value.trim();
   const moradia = document.querySelector("input[name=c-moradia]:checked")?.value;
-  const ok = nome && /\S+@\S+\.\S+/.test(email) && senha.length >= 6 && endereco && moradia;
-  document.getElementById("c-erro").classList.toggle("visivel", !ok);
-  if (!ok) return;
-  localStorage.setItem(CONTA, JSON.stringify({ nome, email, senha, endereco, moradia }));
+  const temNumero = document.getElementById("c-tem-numero").checked;
+  const numero = document.getElementById("c-numero").value.trim();
+  const temComplemento = document.getElementById("c-tem-complemento").checked;
+  const complemento = document.getElementById("c-complemento").value.trim();
+  let mensagem = "";
+  if (!nome) mensagem = "Informe o nome completo.";
+  else if (!/\S+@\S+\.\S+/.test(email)) mensagem = "Informe um e-mail válido, como nome@email.com.";
+  else if (senha.length < 6) mensagem = "A senha precisa ter pelo menos 6 caracteres.";
+  else if (!enderecoEncontrado) mensagem = "Informe um CEP válido para preencher o endereço.";
+  else if (temNumero && !numero) mensagem = "Informe o número ou desmarque a opção.";
+  else if (temComplemento && !complemento) mensagem = "Informe o complemento ou desmarque a opção.";
+  else if (!moradia) mensagem = "Escolha se você mora em casa ou em condomínio.";
+  const erro = document.getElementById("c-erro");
+  erro.textContent = mensagem;
+  erro.classList.toggle("visivel", !!mensagem);
+  if (mensagem) return;
+  const d = enderecoEncontrado;
+  const partes = [d.logradouro, temNumero ? numero : "s/n"];
+  if (temComplemento) partes.push(complemento);
+  const endereco = partes.join(", ") + ", " + d.bairro + ", " + d.localidade + " - " + d.uf;
+  localStorage.setItem(CONTA, JSON.stringify({
+    nome, email, senha, endereco, cep: d.cep, moradia,
+    numero: temNumero ? numero : "",
+    complemento: temComplemento ? complemento : ""
+  }));
+  enderecoEncontrado = null;
   e.target.reset();
+  document.getElementById("c-endereco-box").hidden = true;
+  document.getElementById("c-extras").hidden = true;
+  document.getElementById("c-cep-status").textContent = "";
   mostrar("conta-criada");
 });
 
@@ -517,7 +629,7 @@ function continuarMateriais() {
 function continuarAgendar() {
   const data = document.getElementById("a-data").value;
   const periodo = document.querySelector("input[name=a-periodo]:checked")?.value;
-  const endereco = document.getElementById("a-endereco").value.trim();
+  const endereco = contaSalva()?.endereco || "";
   const ok = data && periodo && endereco;
   document.getElementById("a-erro").classList.toggle("visivel", !ok);
   if (!ok) return;
